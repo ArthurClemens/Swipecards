@@ -1,23 +1,21 @@
 'use strict';
 
 // config values
-var SP_KEY;
-var FRONT_KEY;
-var BACK_KEY;
+var set;
 
 var app = {};
 
 app.getCards = function() {
     m.startComputation();
     var deferred = m.deferred(),
-    	stored = localStorage.getItem(SP_KEY);
+    	stored = localStorage.getItem(set.key);
 
     if (stored) {
         deferred.resolve(JSON.parse(stored));
         m.endComputation();
     } else {
-        app.fetchData(SP_KEY, function(data) {
-            localStorage.setItem(SP_KEY, JSON.stringify(data));
+        app.fetchData(set.key, function(data) {
+            localStorage.setItem(set.key, JSON.stringify(data));
             deferred.resolve(data);
             m.endComputation();
         });
@@ -26,11 +24,11 @@ app.getCards = function() {
 };
 
 app.storeData = function(data) {
-	localStorage.setItem(SP_KEY, JSON.stringify(data));
+	localStorage.setItem(set.key, JSON.stringify(data));
 };
 
 app.clearData = function() {
-	localStorage.removeItem(SP_KEY);
+	localStorage.removeItem(set.key);
 };
 
 app.fetchData = function(key, callback) {
@@ -97,9 +95,9 @@ app.view = function() {
     		m('span[flex]', (cardData.all.length - cardData.remaining.length))
     	]),
     	card.info ? m('.card-inner[horizontal][layout][center]', [
-        	m('.info', m('span', card[FRONT_KEY] + ':'), m('br'), card[BACK_KEY])
+        	m('.info', m('span', card[set.item_key] + ':'), m('br'), card[set.back_key])
         ]) : m('.card-inner[horizontal][layout][center][center-justified]', [
-        	m('div', card[FRONT_KEY])
+        	m('div', card[set.item_key])
         ]),
         m('.button-row[horizontal][layout]', [
             m('a[flex]', {onclick: app.vm.next.bind(app.vm, card)}, 'No'),
