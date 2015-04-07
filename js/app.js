@@ -46,7 +46,7 @@ app.fetchData = function(key, callback) {
 app.vm = {};
 app.vm.init = function() {
     this.cards = m.prop([]);
-    //app.clearData();
+    // app.clearData();
     this.inited = m.prop(false);
     this.cardData = m.prop();
     this.cards = new app.getCards();
@@ -94,7 +94,9 @@ app.view = function() {
         app.vm.inited(true);
     }
 	var cardData = app.vm.cardData(),
-		card = cardData.current;
+		card = cardData.current,
+        remainingCount = cardData.remaining.length,
+        doneCount = cardData.all.length - remainingCount;
     if (card === undefined) {
         return m('.card[vertical][layout]', [
             m('.card-content[horizontal][layout][center][center-justified]', {class: 'card-done'}, 'Done!')
@@ -102,9 +104,11 @@ app.view = function() {
     } else {
         return m('.card[vertical][layout]', [
             m('.control-row[horizontal][layout]', [
-        		m('span[flex]', cardData.remaining.length),
+        		m('span'),
         		m('span[flex]'),
-        		m('span[flex]', (cardData.all.length - cardData.remaining.length))
+        		m('span', remainingCount),
+                m('span', m.trust(yes_icon)),
+                m('span', doneCount)
             ]),
             m('.card-content[horizontal][layout][center][center-justified]',
             	app.vm.showInfo() ? m('.info', m('span', card[set.item_key]), m('br'), card[set.meaning_key]) : m('div', card[set.item_key])

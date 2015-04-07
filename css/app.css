@@ -16,10 +16,16 @@ body {
 }
 .card .control-row {
     font-size: 13px;
-    padding: 0 10px;
+    padding: 10px 10px;
     color: #999;
-    height: 40px;
-    line-height: 40px;
+    line-height: 20px;
+    height: 20px;
+}
+.card .control-row svg {
+    height: 18px;
+    width: 18px;
+    margin: 0 3px 0 10px;
+    fill: green;
 }
 .card .control-row span:first-child {
     text-align: left;
@@ -68,6 +74,15 @@ body {
 .card .card-buttons a:hover {
     /*background-color: #ddd;*/
     text-decoration: none;
+}
+.card .card-buttons a svg {
+    fill: #777;
+}
+.card .card-buttons a:first-child svg {
+    fill: #900;
+}
+.card .card-buttons a:last-child svg {
+    fill: green;
 }
 [layout][horizontal], [layout][vertical] {
     display: -ms-flexbox;
