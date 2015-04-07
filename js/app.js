@@ -92,7 +92,7 @@ app.view = function() {
 		card = cardData.current;
     return m('.card', [
     	m('.info-row[horizontal][layout]', [
-    		m('span[flex]', cardData.all.length),
+    		m('span[flex]', cardData.remaining.length),
     		m('span[flex]'),
     		m('span[flex]', (cardData.all.length - cardData.remaining.length))
     	]),
