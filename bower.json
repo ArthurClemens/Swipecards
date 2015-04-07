@@ -1,0 +1,27 @@
+{
+  "name": "Cards",
+  "version": "0.0-alpha",
+  "description": "",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "mithril": "git://github.com/lhorie/mithril.js#components",
+    "tabletop": "git@github.com:jsoma/tabletop.git",
+    "lodash": "",
+    "tap.js": ""
+  },
+  "homepage": "",
+  "authors": [
+    "Arthur Clemens <arthurclemens@gmail.com>"
+  ],
+  "moduleType": [
+    "amd"
+  ],
+  "keywords": []
+}
