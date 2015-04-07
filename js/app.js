@@ -94,23 +94,29 @@ app.view = function() {
     }
 	var cardData = app.vm.cardData(),
 		card = cardData.current;
-    return m('.card[vertical][layout]', [
-        m('.control-row[horizontal][layout]', [
-    		m('span[flex]', cardData.remaining.length),
-    		m('span[flex]'),
-    		m('span[flex]', (cardData.all.length - cardData.remaining.length))
-        ]),
-        m('.card-content[horizontal][layout][center][center-justified]',
-        	app.vm.showInfo() ? m('.info', m('span', card[set.item_key]), m('br'), card[set.meaning_key]) : m('div', card[set.item_key])
-        ),
-        m('.card-buttons', 
-            m('.buttons[horizontal][layout]', [
-                m('a[flex]', {onclick: app.vm.next.bind(app.vm)}, m.trust(no_icon)),
-                m('a[flex]', {onclick: app.vm.info.bind(app.vm)}, m.trust(info_icon)),
-                m('a[flex]', {onclick: app.vm.done.bind(app.vm, card)}, m.trust(yes_icon))
-            ])
-        )
-    ]);
+    if (card === undefined) {
+        return m('.card[vertical][layout]', [
+            m('.card-content[horizontal][layout][center][center-justified]', {class: 'card-done'}, 'Done!')
+        ]);
+    } else {
+        return m('.card[vertical][layout]', [
+            m('.control-row[horizontal][layout]', [
+        		m('span[flex]', cardData.remaining.length),
+        		m('span[flex]'),
+        		m('span[flex]', (cardData.all.length - cardData.remaining.length))
+            ]),
+            m('.card-content[horizontal][layout][center][center-justified]',
+            	app.vm.showInfo() ? m('.info', m('span', card[set.item_key]), m('br'), card[set.meaning_key]) : m('div', card[set.item_key])
+            ),
+            m('.card-buttons', 
+                m('.buttons[horizontal][layout]', [
+                    m('a[flex]', {onclick: app.vm.next.bind(app.vm)}, m.trust(no_icon)),
+                    m('a[flex]', {onclick: app.vm.info.bind(app.vm)}, m.trust(info_icon)),
+                    m('a[flex]', {onclick: app.vm.done.bind(app.vm, card)}, m.trust(yes_icon))
+                ])
+            )
+        ]);
+    }
 };
 
 m.module(document.body, app);

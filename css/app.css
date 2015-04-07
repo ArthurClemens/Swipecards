@@ -33,6 +33,9 @@ body {
     background: #fff;
     padding: 0 15px;
 }
+.card .card-content.card-done {
+    height: 100%;
+}
 .card .card-content > div {
     text-align: center;
 }
