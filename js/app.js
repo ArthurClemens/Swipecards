@@ -95,7 +95,7 @@ app.view = function() {
     		m('span[flex]', (cardData.all.length - cardData.remaining.length))
     	]),
     	card.info ? m('.card-inner[horizontal][layout][center]', [
-        	m('.info', m('span', card[set.item_key] + ':'), m('br'), card[set.back_key])
+        	m('.info', m('span', card[set.item_key] + ':'), m('br'), card[set.meaning_key])
         ]) : m('.card-inner[horizontal][layout][center][center-justified]', [
         	m('div', card[set.item_key])
         ]),
