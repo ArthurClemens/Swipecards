@@ -13,8 +13,7 @@
   "dependencies": {
     "mithril": "0.1.34",
     "tabletop": "git@github.com:jsoma/tabletop.git",
-    "lodash": "",
-    "tap.js": ""
+    "lodash": ""
   },
   "homepage": "",
   "authors": [
