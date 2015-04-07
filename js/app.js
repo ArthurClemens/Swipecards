@@ -1,5 +1,10 @@
 'use strict';
 
+// config values
+var SP_KEY;
+var FRONT_KEY;
+var BACK_KEY;
+
 var app = {};
 
 app.getCards = function() {
@@ -38,9 +43,11 @@ app.fetchData = function(key, callback) {
 
 app.vm = {};
 app.vm.init = function() {
-    this.cards = new app.getCards();
+    this.cards = m.prop([]);
+    //app.clearData();
+    this.inited = m.prop(false);
     this.cardData = m.prop();
-    app.vm.updateCardData();
+    this.cards = new app.getCards();
 };
 app.vm.done = function(card) {
     card.done = true;
@@ -48,20 +55,24 @@ app.vm.done = function(card) {
     app.vm.updateCardData();
 };
 app.vm.info = function(card) {
-	console.log("info", card);
 	card.info = !card.info;
 };
 app.vm.next = function() {
-    console.log('next');
     app.vm.updateCardData();
 };
 app.vm.updateCardData = function() {
-	console.log("app.vm.updateCardData");
 	var all = app.vm.cards();
     var remaining = _.filter(all, function(c) {
     	return c.done !== true;
     });
-    var current = _.sample(remaining, 1)[0];
+    var current;
+    if (remaining.length === 0) {
+        current = undefined;
+    } else if (remaining.length === 1) {
+        current = remaining[0];
+    } else {
+        current = _.sample(remaining, 1)[0];
+    }
     this.cardData({
     	all: all,
     	remaining: remaining,
@@ -73,10 +84,12 @@ app.controller = function() {
 };
 
 app.view = function() {
-	console.log("view");
+    if (!app.vm.inited()) {
+        app.vm.updateCardData();
+        app.vm.inited(true);
+    }
 	var cardData = app.vm.cardData(),
 		card = cardData.current;
-	console.log("cardData", cardData);
     return m('.card', [
     	m('.info-row[horizontal][layout]', [
     		m('span[flex]', cardData.all.length),
