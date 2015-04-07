@@ -1,41 +1,49 @@
-
+html, body {
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+}
 body {
     background: #eee;
     font-family: arial, sans-serif;
+    margin: 0;
+    padding: 0;
 }
 .card {
-    width: 300px;
-    margin: 0 auto 15px auto;
+    width: 320px;
+    height: 100%;
+    margin: 0 auto;
 }
-.card .info-row {
+.card .control-row {
     font-size: 13px;
-    padding: 5px;
+    padding: 0 10px;
     color: #999;
+    height: 40px;
+    line-height: 40px;
 }
-.card .info-row span:first-child {
+.card .control-row span:first-child {
     text-align: left;
 }
-.card .info-row span:last-child {
+.card .control-row span:last-child {
     text-align: right;
 }
-.card .card-inner {
-    padding: 15px;
+.card .card-content {
     font-size: 28px;
-    height: 250px;
+    height: 90%;
     background: #fff;
+    padding: 0 15px;
 }
-.card .card-inner > div {
+.card .card-content > div {
     text-align: center;
 }
-.card .card-inner > div.info {
+.card .card-content > div.info {
     color: #888;
-    text-align: left;
     font-size: 21px;
 }
-.card .card-inner > div.info span {
+.card .card-content > div.info span {
     font-weight: bold;
 }
-.card .button-row a {
+.card .card-buttons a {
     text-transform: uppercase;
     display: block;
     background: #f5f5f5;
@@ -51,10 +59,10 @@ body {
     -ms-user-select: none;
     user-select: none;
 }
-.card .button-row a + a {
+.card .card-buttons a + a {
     border-left: 1px solid #e0e0e0;
 }
-.card .button-row a:hover {
+.card .card-buttons a:hover {
     /*background-color: #ddd;*/
     text-decoration: none;
 }
