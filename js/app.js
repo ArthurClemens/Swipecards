@@ -54,6 +54,7 @@ app.vm.init = function() {
 };
 app.vm.done = function(card) {
     card.done = true;
+    app.vm.showInfo(false);
     app.storeData(app.vm.cards);
     app.vm.updateCardData();
 };
