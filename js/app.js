@@ -59,6 +59,17 @@ app.getCards = function() {
 
     // check if URL exists
     if (navigator.onLine) {
+        Tabletop.init({
+            key: set.url,
+            callback: function(fetched) {
+                var consolidated = consolidateData(stored, fetched);
+                app.storeData(consolidated);
+                deferred.resolve(consolidated);
+                m.endComputation();
+            },
+            simpleSheet: true
+        });
+        /*
         m.request({
             method: 'GET',
             url: set.url,
@@ -80,6 +91,7 @@ app.getCards = function() {
             alert('Invalid URL');
             useStoredData();
         });
+        */
     } else {
         useStoredData();
     }
