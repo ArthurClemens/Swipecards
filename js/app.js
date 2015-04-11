@@ -7,12 +7,16 @@ var yes_icon = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.
 var no_icon = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="full" width="24" height="24" viewBox="0 0 24.00 24.00" enable-background="new 0 0 24.00 24.00" xml:space="preserve"><path fill-opacity="1" stroke-linejoin="round" d="M 19,6.41L 17.59,5L 12,10.59L 6.41,5L 5,6.41L 10.59,12L 5,17.59L 6.41,19L 12,13.41L 17.59,19L 19,17.59L 13.41,12L 19,6.41 Z "/></svg>';
 var info_icon = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="full" width="24" height="24" viewBox="0 0 24.00 24.00" enable-background="new 0 0 24.00 24.00" xml:space="preserve"><path fill-opacity="1" stroke-width="0.2" stroke-linejoin="round" d="M 10.9994,8.99805L 12.9994,8.99805L 12.9994,6.99805L 10.9994,6.99805M 11.9994,19.998C 7.58838,19.998 3.99939,16.4091 3.99939,11.998C 3.99939,7.58704 7.58838,3.99805 11.9994,3.99805C 16.4104,3.99805 19.9994,7.58704 19.9994,11.998C 19.9994,16.4091 16.4104,19.998 11.9994,19.998 Z M 11.9994,1.99805C 6.47638,1.99805 1.99939,6.47504 1.99939,11.998C 1.99939,17.5211 6.47638,21.998 11.9994,21.998C 17.5224,21.998 21.9994,17.5211 21.9994,11.998C 21.9994,6.47504 17.5224,1.99805 11.9994,1.99805 Z M 10.9994,16.998L 12.9994,16.998L 12.9994,10.998L 10.9994,10.998L 10.9994,16.998 Z "/></svg>';
 
+var chunkSize = 12;
+var chunkMinSize = 4;
+
 var app = {};
 
 app.getCards = function() {
     m.startComputation();
     var deferred,
         stored,
+        useStoredData,
         consolidateData;
 
     deferred = m.deferred();
@@ -28,43 +32,21 @@ app.getCards = function() {
             return fetchedData;
         }
 
-        var keysStored = _.keysIn(storedData[0]),
-            keysFetched = _.keysIn(fetchedData[0]);
-        if (!_.isEqual(keysStored, keysFetched)) {
-            return fetchedData;
-        }
-
         // TODO: does not handle duplicate keys
-        var consolidated = _(fetchedData).forEach(function(fetchedItem) {
+        var consolidated = _.forEach(fetchedData, function(fetchedItem) {
             var storedMatch = _.find(storedData, function(storedItem) {
-                return storedItem[set.item_key] === fetchedItem[set.item_key];
+                return storedItem[set.item_key] == fetchedItem[set.item_key];
             });
             if (storedMatch) {
                 fetchedItem.done = storedMatch.done;
             }
             return fetchedItem;
-        }).value();
+        });
 
         return consolidated;
     };
 
-    // check if URL exists
-    m.request({
-        method: 'GET',
-        url: set.url,
-        deserialize: function(value) {
-            return value;
-        }
-    }).then(function() {
-        app.fetchData(set.url, function(fetched) {
-            var consolidated = consolidateData(stored, fetched);
-            localStorage.setItem(set.url, JSON.stringify(consolidated));
-            deferred.resolve(consolidated);
-            m.endComputation();
-        });
-    }).then(null, function() {
-        console.log('Invalid URL or no internet connection');
-        // Try to use stored
+    useStoredData = function() {
         var data;
         if (stored) {
             data = JSON.parse(stored);
@@ -73,40 +55,67 @@ app.getCards = function() {
         }
         deferred.resolve(data);
         m.endComputation();
-    });
+    };
+
+    // check if URL exists
+    if (navigator.onLine) {
+        m.request({
+            method: 'GET',
+            url: set.url,
+            deserialize: function(value) {
+                return value;
+            }
+        }).then(function() {
+            Tabletop.init({
+                key: set.url,
+                callback: function(fetched) {
+                    var consolidated = consolidateData(stored, fetched);
+                    app.storeData(consolidated);
+                    deferred.resolve(consolidated);
+                    m.endComputation();
+                },
+                simpleSheet: true
+            });
+        }).then(null, function() {
+            alert('Invalid URL');
+            useStoredData();
+        });
+    } else {
+        useStoredData();
+    }
 
     return deferred.promise;
 };
 
 app.storeData = function(data) {
-    localStorage.setItem(set.url, JSON.stringify(data));
+    var self = this;
+    self.data = data;
+    if (self.timeout) {
+        return;
+    }
+    self.timeout = setTimeout(function() {
+        localStorage.setItem(set.url, JSON.stringify(self.data));
+        self.timeout = undefined;
+    }, 300);
 };
 
 app.clearData = function() {
     localStorage.removeItem(set.url);
 };
 
-app.fetchData = function(url, callback) {
-    Tabletop.init({
-        key: url,
-        callback: callback,
-        simpleSheet: true
-    });
-};
-
 app.vm = {};
 app.vm.init = function() {
-    this.cards = m.prop([]);
-    // app.clearData();
+    //app.clearData();
+    this.cards = m.prop(app.getCards());
     this.inited = m.prop(false);
     this.cardData = m.prop();
-    this.cards = new app.getCards();
+    this.chunks = m.prop();
     this.showInfo = m.prop(false);
 };
 app.vm.done = function(card) {
     card.done = true;
     app.vm.showInfo(false);
-    app.storeData(app.vm.cards);
+    app.storeData(app.vm.cards());
     app.vm.updateCardData();
 };
 app.vm.info = function() {
@@ -117,21 +126,43 @@ app.vm.next = function() {
     app.vm.updateCardData();
 };
 app.vm.updateCardData = function() {
-    var all = app.vm.cards();
-    var remaining = _.filter(all, function(c) {
+    var all,
+        remaining,
+        getCurrentChunk,
+        currentChunk,
+        chunks,
+        current;
+
+    getCurrentChunk = function() {
+        return _.filter(_.first(app.vm.chunks()), function(c) {
+            return c.done !== true;
+        });
+    };
+
+    all = app.vm.cards();
+    remaining = _.filter(all, function(c) {
         return c.done !== true;
     });
-    var current;
+    if (app.vm.chunks() === undefined) {
+        app.vm.chunks(_.chunk(_.shuffle(remaining), chunkSize));
+    }
+    currentChunk = getCurrentChunk();
     if (remaining.length === 0) {
         current = undefined;
     } else if (remaining.length === 1) {
-        current = remaining[0];
+        current = _.first(remaining);
     } else {
-        current = _.sample(remaining, 1)[0];
+        if (currentChunk.length <= chunkMinSize && app.vm.chunks().length > 1) {
+            chunks = app.vm.chunks().slice(1); // make copy from 1..n
+            chunks[0] = chunks[0].concat(currentChunk); // add remainder
+            app.vm.chunks(chunks);
+            currentChunk = getCurrentChunk();
+        }
+        current = _.first(_.sample(currentChunk, 1));
     }
     this.cardData({
-        all: all,
-        remaining: remaining,
+        allCount: all.length,
+        remainingCount: remaining.length,
         current: current
     });
 };
@@ -146,8 +177,8 @@ app.view = function() {
     }
     var cardData = app.vm.cardData(),
         card = cardData.current,
-        remainingCount = cardData.remaining.length,
-        doneCount = cardData.all.length - remainingCount;
+        remainingCount = cardData.remainingCount,
+        doneCount = cardData.allCount - cardData.remainingCount;
     if (card === undefined) {
         return m('.card[vertical][layout]', [
             m('.card-content[horizontal][layout][center][center-justified]', {
