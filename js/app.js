@@ -35,14 +35,14 @@ app.getCards = function() {
         }
 
         // TODO: does not handle duplicate keys
-        var consolidated = _(storedData).forEach(function(storedItem) {
-            var matching = _.find(fetchedData, function(fetchedItem) {
+        var consolidated = _(fetchedData).forEach(function(fetchedItem) {
+            var storedMatch = _.find(storedData, function(storedItem) {
                 return storedItem[set.item_key] === fetchedItem[set.item_key];
             });
-            if (matching) {
-                matching.done = storedItem.done;
+            if (storedMatch) {
+                fetchedItem.done = storedMatch.done;
             }
-            return matching;
+            return fetchedItem;
         }).value();
 
         return consolidated;
@@ -75,27 +75,6 @@ app.getCards = function() {
         m.endComputation();
     });
 
-    /*
-    app.fetchData(set.url, function(data) {
-        console.log('data', data);
-
-        localStorage.setItem(set.url, JSON.stringify(data));
-        deferred.resolve(data);
-        m.endComputation();
-    });
-*/
-    /*
-    if (stored) {
-        deferred.resolve(JSON.parse(stored));
-        m.endComputation();
-    } else {
-        app.fetchData(set.url, function(data) {
-            localStorage.setItem(set.url, JSON.stringify(data));
-            deferred.resolve(data);
-            m.endComputation();
-        });
-    }
-*/
     return deferred.promise;
 };
 
