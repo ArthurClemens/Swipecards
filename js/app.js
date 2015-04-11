@@ -11,33 +11,105 @@ var app = {};
 
 app.getCards = function() {
     m.startComputation();
-    var deferred = m.deferred(),
-    	stored = localStorage.getItem(set.key);
+    var deferred,
+        stored,
+        consolidateData;
 
+    deferred = m.deferred();
+    stored = localStorage.getItem(set.url);
+
+    consolidateData = function(stored, fetchedData) {
+        if (!stored) {
+            return fetchedData;
+        }
+        var storedData = JSON.parse(stored);
+
+        if (!storedData || storedData.length === 0) {
+            return fetchedData;
+        }
+
+        var keysStored = _.keysIn(storedData[0]),
+            keysFetched = _.keysIn(fetchedData[0]);
+        if (!_.isEqual(keysStored, keysFetched)) {
+            return fetchedData;
+        }
+
+        // TODO: does not handle duplicate keys
+        var consolidated = _(storedData).forEach(function(storedItem) {
+            var matching = _.find(fetchedData, function(fetchedItem) {
+                return storedItem[set.item_key] === fetchedItem[set.item_key];
+            });
+            if (matching) {
+                matching.done = storedItem.done;
+            }
+            return matching;
+        }).value();
+
+        return consolidated;
+    };
+
+    // check if URL exists
+    m.request({
+        method: 'GET',
+        url: set.url,
+        deserialize: function(value) {
+            return value;
+        }
+    }).then(function() {
+        app.fetchData(set.url, function(fetched) {
+            var consolidated = consolidateData(stored, fetched);
+            localStorage.setItem(set.url, JSON.stringify(consolidated));
+            deferred.resolve(consolidated);
+            m.endComputation();
+        });
+    }).then(null, function() {
+        console.log('Invalid URL or no internet connection');
+        // Try to use stored
+        var data;
+        if (stored) {
+            data = JSON.parse(stored);
+        } else {
+            data = [];
+        }
+        deferred.resolve(data);
+        m.endComputation();
+    });
+
+    /*
+    app.fetchData(set.url, function(data) {
+        console.log('data', data);
+
+        localStorage.setItem(set.url, JSON.stringify(data));
+        deferred.resolve(data);
+        m.endComputation();
+    });
+*/
+    /*
     if (stored) {
         deferred.resolve(JSON.parse(stored));
         m.endComputation();
     } else {
-        app.fetchData(set.key, function(data) {
-            localStorage.setItem(set.key, JSON.stringify(data));
+        app.fetchData(set.url, function(data) {
+            localStorage.setItem(set.url, JSON.stringify(data));
             deferred.resolve(data);
             m.endComputation();
         });
     }
+*/
     return deferred.promise;
 };
 
 app.storeData = function(data) {
-	localStorage.setItem(set.key, JSON.stringify(data));
+    localStorage.setItem(set.url, JSON.stringify(data));
 };
 
 app.clearData = function() {
-	localStorage.removeItem(set.key);
+    localStorage.removeItem(set.url);
 };
 
-app.fetchData = function(key, callback) {
+app.fetchData = function(url, callback) {
     Tabletop.init({
-        key: key,
+        key: url,
         callback: callback,
         simpleSheet: true
     });
@@ -59,16 +131,16 @@ app.vm.done = function(card) {
     app.vm.updateCardData();
 };
 app.vm.info = function() {
-	app.vm.showInfo(!app.vm.showInfo());
+    app.vm.showInfo(!app.vm.showInfo());
 };
 app.vm.next = function() {
     app.vm.showInfo(false);
     app.vm.updateCardData();
 };
 app.vm.updateCardData = function() {
-	var all = app.vm.cards();
+    var all = app.vm.cards();
     var remaining = _.filter(all, function(c) {
-    	return c.done !== true;
+        return c.done !== true;
     });
     var current;
     if (remaining.length === 0) {
@@ -79,9 +151,9 @@ app.vm.updateCardData = function() {
         current = _.sample(remaining, 1)[0];
     }
     this.cardData({
-    	all: all,
-    	remaining: remaining,
-    	current: current
+        all: all,
+        remaining: remaining,
+        current: current
     });
 };
 app.controller = function() {
@@ -93,31 +165,39 @@ app.view = function() {
         app.vm.updateCardData();
         app.vm.inited(true);
     }
-	var cardData = app.vm.cardData(),
-		card = cardData.current,
+    var cardData = app.vm.cardData(),
+        card = cardData.current,
         remainingCount = cardData.remaining.length,
         doneCount = cardData.all.length - remainingCount;
     if (card === undefined) {
         return m('.card[vertical][layout]', [
-            m('.card-content[horizontal][layout][center][center-justified]', {class: 'card-done'}, 'Done!')
+            m('.card-content[horizontal][layout][center][center-justified]', {
+                class: 'card-done'
+            }, 'Done!')
         ]);
     } else {
         return m('.card[vertical][layout]', [
             m('.control-row[horizontal][layout]', [
-        		m('span'),
-        		m('span[flex]'),
-        		m('span', remainingCount),
+                m('span'),
+                m('span[flex]'),
+                m('span', remainingCount),
                 m('span', m.trust(yes_icon)),
                 m('span', doneCount)
             ]),
             m('.card-content[horizontal][layout][center][center-justified]',
-            	app.vm.showInfo() ? m('.info', m('span', card[set.item_key]), m('br'), card[set.meaning_key]) : m('div', card[set.item_key])
+                app.vm.showInfo() ? m('.info', m('span', card[set.item_key]), m('br'), card[set.meaning_key]) : m('div', card[set.item_key])
             ),
-            m('.card-buttons', 
+            m('.card-buttons',
                 m('.buttons[horizontal][layout]', [
-                    m('a[flex]', {onclick: app.vm.next.bind(app.vm)}, m.trust(no_icon)),
-                    m('a[flex]', {onclick: app.vm.info.bind(app.vm)}, m.trust(info_icon)),
-                    m('a[flex]', {onclick: app.vm.done.bind(app.vm, card)}, m.trust(yes_icon))
+                    m('a[flex]', {
+                        onclick: app.vm.next.bind(app.vm)
+                    }, m.trust(no_icon)),
+                    m('a[flex]', {
+                        onclick: app.vm.info.bind(app.vm)
+                    }, m.trust(info_icon)),
+                    m('a[flex]', {
+                        onclick: app.vm.done.bind(app.vm, card)
+                    }, m.trust(yes_icon))
                 ])
             )
         ]);
