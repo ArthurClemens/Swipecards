@@ -146,9 +146,9 @@ app.vm.updateCardData = function() {
         current;
 
     getCurrentChunk = function() {
-        return _.filter(_.first(app.vm.chunks()), function(c) {
+        return _.shuffle(_.filter(_.first(app.vm.chunks()), function(c) {
             return c.done !== true;
-        });
+        }));
     };
 
     all = app.vm.cards();
@@ -170,7 +170,7 @@ app.vm.updateCardData = function() {
             app.vm.chunks(chunks);
             currentChunk = getCurrentChunk();
         }
-        current = _.first(_.sample(currentChunk, 1));
+        current = _.first(currentChunk);
     }
     this.cardData({
         allCount: all.length,
