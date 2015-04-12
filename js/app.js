@@ -5,7 +5,7 @@ var set;
 
 var yes_icon = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="full" width="24" height="24" viewBox="0 0 24.00 24.00" enable-background="new 0 0 24.00 24.00" xml:space="preserve"><path fill-opacity="1" stroke-width="0.2" stroke-linejoin="round" d="M 21,7L 9,19L 3.5,13.5L 4.91421,12.0858L 9,16.1716L 19.5858,5.58579L 21,7 Z "/></svg>';
 var no_icon = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="full" width="24" height="24" viewBox="0 0 24.00 24.00" enable-background="new 0 0 24.00 24.00" xml:space="preserve"><path fill-opacity="1" stroke-linejoin="round" d="M 19,6.41L 17.59,5L 12,10.59L 6.41,5L 5,6.41L 10.59,12L 5,17.59L 6.41,19L 12,13.41L 17.59,19L 19,17.59L 13.41,12L 19,6.41 Z "/></svg>';
-var info_icon = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="full" width="24" height="24" viewBox="0 0 24.00 24.00" enable-background="new 0 0 24.00 24.00" xml:space="preserve"><path fill-opacity="1" stroke-width="0.2" stroke-linejoin="round" d="M 10.9994,8.99805L 12.9994,8.99805L 12.9994,6.99805L 10.9994,6.99805M 11.9994,19.998C 7.58838,19.998 3.99939,16.4091 3.99939,11.998C 3.99939,7.58704 7.58838,3.99805 11.9994,3.99805C 16.4104,3.99805 19.9994,7.58704 19.9994,11.998C 19.9994,16.4091 16.4104,19.998 11.9994,19.998 Z M 11.9994,1.99805C 6.47638,1.99805 1.99939,6.47504 1.99939,11.998C 1.99939,17.5211 6.47638,21.998 11.9994,21.998C 17.5224,21.998 21.9994,17.5211 21.9994,11.998C 21.9994,6.47504 17.5224,1.99805 11.9994,1.99805 Z M 10.9994,16.998L 12.9994,16.998L 12.9994,10.998L 10.9994,10.998L 10.9994,16.998 Z "/></svg>';
+var info_icon = '<svg version="1.1" id="Layer_2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="24px" height="24px" viewBox="0 0 24 24" enable-background="new 0 0 24 24" xml:space="preserve"><g><polyline points="10.6,7.8 13.4,7.8 13.4,5 10.6,5   "/><rect x="10.6" y="10.601" width="2.801" height="8.399"/></g></svg>';
 
 var chunkSize = 12;
 var chunkMinSize = 4;
@@ -140,16 +140,11 @@ app.vm.next = function() {
 app.vm.updateCardData = function() {
     var all,
         remaining,
-        getCurrentChunk,
+        firstChunk,
+        getCurrentChunkTodo,
         currentChunk,
         chunks,
         current;
-
-    getCurrentChunk = function() {
-        return _.shuffle(_.filter(_.first(app.vm.chunks()), function(c) {
-            return c.done !== true;
-        }));
-    };
 
     all = app.vm.cards();
     remaining = _.filter(all, function(c) {
@@ -158,7 +153,15 @@ app.vm.updateCardData = function() {
     if (app.vm.chunks() === undefined) {
         app.vm.chunks(_.chunk(_.shuffle(remaining), chunkSize));
     }
-    currentChunk = getCurrentChunk();
+
+    firstChunk = _.first(app.vm.chunks());
+
+    getCurrentChunkTodo = function() {
+        return _.shuffle(_.filter(firstChunk, function(c) {
+            return c.done !== true;
+        }));
+    };
+    currentChunk = getCurrentChunkTodo();
     if (remaining.length === 0) {
         current = undefined;
     } else if (remaining.length === 1) {
@@ -168,7 +171,7 @@ app.vm.updateCardData = function() {
             chunks = app.vm.chunks().slice(1); // make copy from 1..n
             chunks[0] = chunks[0].concat(currentChunk); // add remainder
             app.vm.chunks(chunks);
-            currentChunk = getCurrentChunk();
+            currentChunk = getCurrentChunkTodo();
         }
         current = _.first(currentChunk);
     }
@@ -189,8 +192,9 @@ app.view = function() {
     }
     var cardData = app.vm.cardData(),
         card = cardData.current,
-        remainingCount = cardData.remainingCount,
-        doneCount = cardData.allCount - cardData.remainingCount;
+        allCount = cardData.allCount,
+        doneCount = cardData.allCount - cardData.remainingCount,
+        donePercentage = 100.0 / allCount * doneCount;
     if (card === undefined) {
         return m('.card[vertical][layout]', [
             m('.card-content[horizontal][layout][center][center-justified]', {
@@ -199,27 +203,33 @@ app.view = function() {
         ]);
     } else {
         return m('.card[vertical][layout]', [
-            m('.control-row[horizontal][layout]', [
+            m('.meta-row[horizontal][layout]', [
                 m('span'),
-                m('span[flex]'),
-                m('span', remainingCount),
-                m('span', m.trust(yes_icon)),
-                m('span', doneCount)
+                m('span[flex]', {
+                    class: 'title'
+                }, set.title)
             ]),
-            m('.card-content[horizontal][layout][center][center-justified]',
-                app.vm.showInfo() ? m('.info', m('span', card[set.item_key]), m('br'), card[set.meaning_key]) : m('div', card[set.item_key])
+            m('.progress-row[horizontal][layout]',
+                m('.done', {
+                    style: 'width:' + donePercentage + '%'
+                })
+            ),
+            m('.content-row[flex][horizontal][layout][center-center]',
+                m('.card-content',
+                    app.vm.showInfo() ? m('.info', m('span', card[set.item_key]), m('br'), card[set.meaning_key]) : m('div', card[set.item_key])
+                )
             ),
             m('.card-buttons',
                 m('.buttons[horizontal][layout]', [
                     m('a[flex]', {
                         onclick: app.vm.next.bind(app.vm)
-                    }, m.trust(no_icon)),
+                    }, m('.icon', m('i[fit]', m.trust(no_icon)))),
                     m('a[flex]', {
                         onclick: app.vm.info.bind(app.vm)
-                    }, m.trust(info_icon)),
+                    }, m('.icon', m('i[fit]', m.trust(info_icon)))),
                     m('a[flex]', {
                         onclick: app.vm.done.bind(app.vm, card)
-                    }, m.trust(yes_icon))
+                    }, m('.icon', m('i[fit]', m.trust(yes_icon))))
                 ])
             )
         ]);

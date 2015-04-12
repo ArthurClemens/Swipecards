@@ -1,3 +1,5 @@
 bower_components
 js/config.js
 .DS_Store
+css/.sass-cache
+css/app.css.map
